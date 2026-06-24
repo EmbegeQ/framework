@@ -149,6 +149,11 @@ class Validator implements ValidatorInterface
             'required' => "The {$field} field is required.",
             'email' => "The {$field} field must be a valid email address.",
             'numeric' => "The {$field} field must be a number.",
+            'boolean' => "The {$field} field must be true or false.",
+            'array' => "The {$field} field must be an array.",
+            'in' => "The selected {$field} is invalid.",
+            'confirmed' => "The {$field} confirmation does not match.",
+            'date' => "The {$field} field is not a valid date.",
             'min' => "The {$field} field must be at least {$parameters[0]}.",
             'max' => "The {$field} field must not be greater than {$parameters[0]}.",
             'unique' => "The {$field} has already been taken.",
@@ -249,6 +254,60 @@ class Validator implements ValidatorInterface
         }
 
         return false;
+    }
+
+    /**
+     * Validate boolean rule.
+     */
+    protected function validateBoolean(string $field, mixed $value, array $parameters): bool
+    {
+        return in_array($value, [true, false, 1, 0, '1', '0', 'true', 'false'], true);
+    }
+
+    /**
+     * Validate array rule.
+     */
+    protected function validateArray(string $field, mixed $value, array $parameters): bool
+    {
+        return is_array($value);
+    }
+
+    /**
+     * Validate in rule.
+     */
+    protected function validateIn(string $field, mixed $value, array $parameters): bool
+    {
+        return in_array($value, $parameters, true);
+    }
+
+    /**
+     * Validate confirmed rule.
+     */
+    protected function validateConfirmed(string $field, mixed $value, array $parameters): bool
+    {
+        $confirmationKey = $field . '_confirmation';
+
+        if (!array_key_exists($confirmationKey, $this->data)) {
+            return false;
+        }
+
+        return $this->data[$confirmationKey] === $value;
+    }
+
+    /**
+     * Validate date rule.
+     */
+    protected function validateDate(string $field, mixed $value, array $parameters): bool
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return true;
+        }
+
+        if (!is_string($value) && !is_numeric($value)) {
+            return false;
+        }
+
+        return strtotime((string) $value) !== false;
     }
 
     /**

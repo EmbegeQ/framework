@@ -20,6 +20,13 @@ class QueueManager
     protected array $connections = [];
 
     /**
+     * Custom driver creators.
+     *
+     * @var array<string, callable>
+     */
+    protected array $customCreators = [];
+
+    /**
      * Create a new queue manager instance.
      */
     public function __construct(protected ContainerInterface $container) {}
@@ -39,6 +46,38 @@ class QueueManager
     }
 
     /**
+     * Push a new job onto the default queue connection.
+     */
+    public function push(string|object $job, mixed $data = '', ?string $queue = null): mixed
+    {
+        return $this->connection()->push($job, $data, $queue);
+    }
+
+    /**
+     * Push a new job onto the default queue connection after a delay.
+     */
+    public function later(int $delay, string|object $job, mixed $data = '', ?string $queue = null): mixed
+    {
+        return $this->connection()->later($delay, $job, $data, $queue);
+    }
+
+    /**
+     * Pop the next job from the default queue connection.
+     */
+    public function pop(?string $queue = null): ?\EmbegeQ\Nutrisi\Contracts\Queue\JobInterface
+    {
+        return $this->connection()->pop($queue);
+    }
+
+    /**
+     * Get the size of the default queue connection.
+     */
+    public function size(?string $queue = null): int
+    {
+        return $this->connection()->size($queue);
+    }
+
+    /**
      * Resolve the queue connection instance.
      */
     protected function resolve(string $name): QueueInterface
@@ -46,6 +85,10 @@ class QueueManager
         $config = $this->getConfig($name);
 
         if ($config === null) {
+            if ($name === 'sync') {
+                return $this->createSyncDriver([]);
+            }
+
             throw new InvalidArgumentException("Queue connection [{$name}] is not configured.");
         }
 
@@ -53,6 +96,12 @@ class QueueManager
 
         if ($driver === null) {
             throw new InvalidArgumentException("Queue connection [{$name}] is missing a driver configuration.");
+        }
+
+        if (isset($this->customCreators[$driver])) {
+            $queue = ($this->customCreators[$driver])($this->container, $config);
+            $queue->setContainer($this->container);
+            return $queue;
         }
 
         $method = 'create' . ucfirst($driver) . 'Driver';
@@ -89,6 +138,14 @@ class QueueManager
         $connection = $resolver->connection($config['connection'] ?? null);
 
         return new DatabaseQueue($connection, $config['table'] ?? 'jobs');
+    }
+
+    /**
+     * Register a custom driver creator closure.
+     */
+    public function extend(string $driver, callable $callback): void
+    {
+        $this->customCreators[$driver] = $callback;
     }
 
     /**

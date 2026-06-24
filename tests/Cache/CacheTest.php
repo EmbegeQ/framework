@@ -136,4 +136,31 @@ class CacheTest extends TestCase
         $this->assertInstanceOf(ArrayCacheStore::class, $manager->store());
         $this->assertInstanceOf(ArrayCacheStore::class, $manager->driver('array'));
     }
+
+    #[Test]
+    public function cache_manager_resolves_named_file_store_from_configuration(): void
+    {
+        $app = new ApplicationContainer();
+        $config = new ConfigRepository([
+            'cache' => [
+                'default' => 'file',
+                'stores' => [
+                    'file' => [
+                        'driver' => 'file',
+                        'path' => $this->tempCacheDir,
+                    ],
+                ],
+            ],
+        ]);
+        $app->instance(RepositoryInterface::class, $config);
+        $app->alias(RepositoryInterface::class, 'config');
+
+        $manager = new CacheManager($app);
+
+        $store = $manager->store();
+
+        $this->assertInstanceOf(FileCacheStore::class, $store);
+        $store->set('foo', 'bar');
+        $this->assertSame('bar', $store->get('foo'));
+    }
 }

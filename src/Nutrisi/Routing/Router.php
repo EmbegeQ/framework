@@ -16,6 +16,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use EmbegeQ\Nutrisi\Routing\RouteCollection;
 
 /**
  * FastRoute-backed Router.
@@ -31,6 +32,11 @@ class Router implements RouterInterface
      * @var Route[]
      */
     private array $routes = [];
+
+    /**
+     * Named route collection.
+     */
+    private RouteCollection $routeCollection;
 
     /**
      * The compiled FastRoute dispatcher.
@@ -58,6 +64,7 @@ class Router implements RouterInterface
             new RouteParser(),
             new DataGenerator()
         );
+        $this->routeCollection = new RouteCollection();
     }
 
     /**
@@ -68,6 +75,17 @@ class Router implements RouterInterface
     public function getRoutes(): array
     {
         return $this->routes;
+    }
+
+    /**
+     * Get a named route URI by name.
+     *
+     * @param  string  $name
+     * @param  array<string, mixed>  $parameters
+     */
+    public function route(string $name, array $parameters = []): string
+    {
+        return $this->routeCollection->generateUri($name, $parameters);
     }
 
     /**
@@ -134,6 +152,7 @@ class Router implements RouterInterface
         }
 
         $this->routes[] = $route;
+        $this->routeCollection->addNamedRoute($route);
         $this->dispatcher = null; // Invalidate compiled dispatcher
 
         return $route;

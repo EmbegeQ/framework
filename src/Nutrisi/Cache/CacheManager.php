@@ -61,6 +61,14 @@ class CacheManager implements CacheInterface
             return ($this->customCreators[$name])($this->container);
         }
 
+        /** @var RepositoryInterface $config */
+        $config = $this->container->get('config');
+        $stores = $config->get('cache.stores', []);
+
+        if (array_key_exists($name, $stores)) {
+            return $this->resolveConfiguredStore($name, (array) $stores[$name]);
+        }
+
         $method = 'create' . ucfirst($name) . 'Store';
 
         if (method_exists($this, $method)) {
@@ -71,26 +79,53 @@ class CacheManager implements CacheInterface
     }
 
     /**
-     * Create an instance of the "array" cache store.
+     * Resolve a configured cache store.
+     *
+     * @param  string  $name
+     * @param  array<string, mixed>  $config
      */
-    protected function createArrayStore(): CacheInterface
+    protected function resolveConfiguredStore(string $name, array $config): CacheInterface
+    {
+        $driver = $config['driver'] ?? $name;
+        $method = 'create' . ucfirst($driver) . 'Store';
+
+        if (method_exists($this, $method)) {
+            return $this->$method($config);
+        }
+
+        if (isset($this->customCreators[$driver])) {
+            return ($this->customCreators[$driver])($this->container);
+        }
+
+        throw new \InvalidArgumentException("Cache driver [{$driver}] not supported for store [{$name}].");
+    }
+
+    /**
+     * Create an instance of the "array" cache store.
+     *
+     * @param  array<string, mixed>  $config
+     */
+    protected function createArrayStore(array $config = []): CacheInterface
     {
         return new ArrayCacheStore();
     }
 
     /**
      * Create an instance of the "file" cache store.
+     *
+     * @param  array<string, mixed>  $config
      */
-    protected function createFileStore(): CacheInterface
+    protected function createFileStore(array $config = []): CacheInterface
     {
-        /** @var RepositoryInterface $config */
-        $config = $this->container->get('config');
+        /** @var RepositoryInterface $repository */
+        $repository = $this->container->get('config');
 
-        $directory = $config->get('cache.stores.file.path');
+        $directory = $config['path'] ?? $repository->get('cache.stores.file.path');
 
         if (!$directory) {
             $basePath = $this->container->has('app') ? $this->container->get('app')->basePath() : sys_get_temp_dir();
-            $directory = rtrim($basePath, '\/') . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'framework' . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'data';
+            $directory = rtrim($basePath, '\/');
+            $directory .= DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'framework' . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'data';
         }
 
         return new FileCacheStore($directory);
