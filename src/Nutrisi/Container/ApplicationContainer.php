@@ -106,9 +106,9 @@ class ApplicationContainer implements ContainerInterface
     /**
      * {@inheritdoc}
      */
-    public function make(string $abstract, array $parameters = []): mixed
+    public function make(string $abstract, array $parameters = [], ?\Psr\Container\ContainerInterface $context = null): mixed
     {
-        return $this->resolve($abstract, $parameters);
+        return $this->resolve($abstract, $parameters, $context);
     }
 
     /**
@@ -151,7 +151,7 @@ class ApplicationContainer implements ContainerInterface
      * @throws EntryNotFoundException
      * @throws BindingResolutionException
      */
-    private function resolve(string $abstract, array $parameters = []): mixed
+    private function resolve(string $abstract, array $parameters = [], ?\Psr\Container\ContainerInterface $context = null): mixed
     {
         // Resolve aliases to their target abstract.
         $abstract = $this->getAlias($abstract);
@@ -164,7 +164,7 @@ class ApplicationContainer implements ContainerInterface
         // If we have a binding, use its factory closure.
         if (isset($this->bindings[$abstract])) {
             $binding = $this->bindings[$abstract];
-            $object = ($binding['concrete'])($this, $parameters);
+            $object = ($binding['concrete'])($context ?? $this, $parameters);
 
             // Cache if this is a shared (singleton) binding.
             if ($binding['shared'] && $parameters === []) {
@@ -175,7 +175,7 @@ class ApplicationContainer implements ContainerInterface
         }
 
         // No binding found; attempt Reflection-based autowiring.
-        return $this->buildFromReflection($abstract, $parameters);
+        return $this->buildFromReflection($abstract, $parameters, $context);
     }
 
     /**
@@ -187,7 +187,7 @@ class ApplicationContainer implements ContainerInterface
      *
      * @throws BindingResolutionException
      */
-    private function buildFromReflection(string $concrete, array $parameters = []): object
+    private function buildFromReflection(string $concrete, array $parameters = [], ?\Psr\Container\ContainerInterface $context = null): object
     {
         // Circular dependency detection.
         if (isset($this->buildStack[$concrete])) {
@@ -217,6 +217,7 @@ class ApplicationContainer implements ContainerInterface
             $dependencies = $this->resolveDependencies(
                 $constructor->getParameters(),
                 $parameters,
+                $context,
             );
 
             return $reflector->newInstanceArgs($dependencies);
@@ -234,7 +235,7 @@ class ApplicationContainer implements ContainerInterface
      *
      * @throws BindingResolutionException
      */
-    private function resolveDependencies(array $deps, array $overrides = []): array
+    private function resolveDependencies(array $deps, array $overrides = [], ?\Psr\Container\ContainerInterface $context = null): array
     {
         $resolved = [];
 
@@ -255,8 +256,8 @@ class ApplicationContainer implements ContainerInterface
                 $typeName = $type->getName();
 
                 try {
-                    $resolved[] = $this->make($typeName);
-                } catch (BindingResolutionException $e) {
+                    $resolved[] = $context ? $context->get($typeName) : $this->make($typeName);
+                } catch (BindingResolutionException | \Psr\Container\NotFoundExceptionInterface $e) {
                     // If the dependency is optional (nullable), use null.
                     if ($dep->allowsNull()) {
                         $resolved[] = null;
@@ -348,8 +349,8 @@ class ApplicationContainer implements ContainerInterface
 
         // If the concrete is a class name string, wrap it in a closure that autowires it.
         if (is_string($concrete)) {
-            return function (ContainerInterface $container, array $parameters = []) use ($concrete): mixed {
-                return $this->buildFromReflection($concrete, $parameters);
+            return function (\Psr\Container\ContainerInterface $container, array $parameters = []) use ($concrete): mixed {
+                return $this->buildFromReflection($concrete, $parameters, $container);
             };
         }
 

@@ -45,6 +45,7 @@ class RequestContainer implements ContainerInterface
     public function __construct(ApplicationContainer $fallbackContainer)
     {
         $this->fallback = $fallbackContainer;
+        $this->instances[ContainerInterface::class] = $this;
     }
 
     /**
@@ -74,8 +75,14 @@ class RequestContainer implements ContainerInterface
             return $this->instances[$id];
         }
 
-        // Delegate to the application-scope container.
-        return $this->fallback->get($id);
+        if (!$this->fallback->has($id)) {
+            throw new EntryNotFoundException(
+                "No entry was found for identifier [{$id}] in the container."
+            );
+        }
+
+        // Delegate to the application-scope container, passing $this as context.
+        return $this->fallback->make($id, [], $this);
     }
 
     /**

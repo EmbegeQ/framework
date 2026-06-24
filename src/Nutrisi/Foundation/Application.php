@@ -76,6 +76,7 @@ class Application extends ApplicationContainer implements ApplicationInterface
         $this->instance('app', $this);
         $this->instance(ContainerInterface::class, $this);
         $this->instance(ApplicationInterface::class, $this);
+        $this->instance(\Psr\Container\ContainerInterface::class, $this);
     }
 
     /**
