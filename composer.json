@@ -29,6 +29,8 @@
         "ext-mbstring": "*",
         "ext-openssl": "*",
         "ext-tokenizer": "*",
+        "league/flysystem": "^3.25",
+        "monolog/monolog": "^3.0",
         "nyholm/psr7": "^1.8",
         "psr/container": "^2.0",
         "psr/event-dispatcher": "^1.0",
@@ -41,8 +43,6 @@
     },
     "require-dev": {
         "nikic/fast-route": "^2.0",
-        "monolog/monolog": "^3.0",
-        "league/flysystem": "^3.25",
         "symfony/console": "^7.4 || ^8.0",
         "symfony/mailer": "^7.4 || ^8.0",
         "phpstan/phpstan": "^2.0",
