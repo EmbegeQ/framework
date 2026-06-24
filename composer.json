@@ -1,0 +1,86 @@
+{
+    "name": "embegeq/framework",
+    "description": "The EmbegeQ Framework - A memory-safe, PSR Bridge Architecture for stateful PHP workers.",
+    "license": "MIT",
+    "keywords": [
+        "framework",
+        "embegeq",
+        "psr",
+        "stateful",
+        "frankenphp",
+        "roadrunner",
+        "swoole",
+        "memory-safe"
+    ],
+    "authors": [
+        {
+            "name": "EmbegeQ",
+            "homepage": "https://embegeq.dev.dyzulk.com"
+        }
+    ],
+    "homepage": "https://embegeq.dev.dyzulk.com",
+    "support": {
+        "issues": "https://github.com/EmbegeQ/framework/issues",
+        "source": "https://github.com/EmbegeQ/framework"
+    },
+    "require": {
+        "php": ">=8.4",
+        "ext-ctype": "*",
+        "ext-mbstring": "*",
+        "ext-openssl": "*",
+        "ext-tokenizer": "*",
+        "nyholm/psr7": "^1.8",
+        "psr/container": "^2.0",
+        "psr/event-dispatcher": "^1.0",
+        "psr/http-factory": "^1.1",
+        "psr/http-message": "^2.0",
+        "psr/http-server-handler": "^1.0",
+        "psr/http-server-middleware": "^1.0",
+        "psr/log": "^3.0",
+        "psr/simple-cache": "^3.0"
+    },
+    "require-dev": {
+        "nikic/fast-route": "^2.0",
+        "monolog/monolog": "^3.0",
+        "league/flysystem": "^3.25",
+        "symfony/console": "^7.4 || ^8.0",
+        "symfony/mailer": "^7.4 || ^8.0",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^11.5 || ^12.0"
+    },
+    "provide": {
+        "psr/container-implementation": "2.0",
+        "psr/event-dispatcher-implementation": "1.0",
+        "psr/log-implementation": "3.0",
+        "psr/simple-cache-implementation": "3.0"
+    },
+    "suggest": {
+        "ext-pdo": "Required to use all database features.",
+        "ext-redis": "Required to use the Redis cache and session drivers.",
+        "nikic/fast-route": "Required for the default routing implementation (^2.0).",
+        "monolog/monolog": "Required for the default logging implementation (^3.0).",
+        "league/flysystem": "Required for the filesystem abstraction layer (^3.25).",
+        "symfony/console": "Required for the CLI application layer (^7.4 || ^8.0).",
+        "symfony/mailer": "Required for the mail transport layer (^7.4 || ^8.0)."
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "EmbegeQ\\Nutrisi\\": "src/Nutrisi/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "EmbegeQ\\Nutrisi\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        }
+    }
+}
