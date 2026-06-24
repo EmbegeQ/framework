@@ -21,6 +21,14 @@ interface KernelInterface
     public function handle(ServerRequestInterface $request): ResponseInterface;
 
     /**
+     * Send the given response to the browser (emits headers and body).
+     *
+     * @param  ResponseInterface  $response
+     * @return void
+     */
+    public function send(ResponseInterface $response): void;
+
+    /**
      * Perform any final actions after the response has been sent.
      *
      * @param  ServerRequestInterface  $request

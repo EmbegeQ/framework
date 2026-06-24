@@ -42,18 +42,50 @@ class Kernel implements KernelInterface
     protected array $routeMiddleware = [];
 
     /**
+     * Map of request objects to their respective RequestContainers.
+     *
+     * @var \WeakMap<ServerRequestInterface, \EmbegeQ\Nutrisi\Container\RequestContainer>
+     */
+    protected \WeakMap $requestContainers;
+
+    /**
      * Create a new HTTP Kernel instance.
      */
     public function __construct(
         protected ApplicationInterface $app,
         protected RouterInterface $router
-    ) {}
+    ) {
+        $this->requestContainers = new \WeakMap();
+    }
 
     /**
      * {@inheritdoc}
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
+        // Retrieve the active request-scope container from request attributes.
+        $container = $request->getAttribute(ContainerInterface::class);
+
+        if (!$container instanceof ContainerInterface) {
+            if (isset($this->requestContainers[$request])) {
+                $container = $this->requestContainers[$request];
+            } else {
+                if (!$this->app instanceof \EmbegeQ\Nutrisi\Container\ApplicationContainer) {
+                    throw new \RuntimeException('Application container must extend ApplicationContainer.');
+                }
+                $requestContainer = new \EmbegeQ\Nutrisi\Container\RequestContainer($this->app);
+                $this->requestContainers[$request] = $requestContainer;
+                $container = $requestContainer;
+            }
+
+            // Double bind the container for standard PSR and internal contracts
+            $request = $request
+                ->withAttribute(ContainerInterface::class, $container)
+                ->withAttribute(\EmbegeQ\Nutrisi\Contracts\Container\ContainerInterface::class, $container);
+
+            $container->instance(ServerRequestInterface::class, $request);
+        }
+
         // Wrap the router dispatching in a request handler to act as the fallback.
         $fallback = new class($this->router) implements RequestHandlerInterface {
             public function __construct(private RouterInterface $router) {}
@@ -63,10 +95,6 @@ class Kernel implements KernelInterface
                 return $this->router->dispatch($request);
             }
         };
-
-        // Retrieve the active request-scope container from request attributes,
-        // falling back to the application container.
-        $container = $request->getAttribute(ContainerInterface::class) ?? $this->app;
 
         $dispatcher = new MiddlewareDispatcher(
             $container,
@@ -80,8 +108,39 @@ class Kernel implements KernelInterface
     /**
      * {@inheritdoc}
      */
+    public function send(ResponseInterface $response): void
+    {
+        if (headers_sent()) {
+            return;
+        }
+
+        // Set HTTP response code
+        http_response_code($response->getStatusCode());
+
+        // Send headers
+        foreach ($response->getHeaders() as $name => $values) {
+            foreach ($values as $value) {
+                header(sprintf('%s: %s', $name, $value), false);
+            }
+        }
+
+        // Output body
+        echo $response->getBody();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function terminate(ServerRequestInterface $request, ResponseInterface $response): void
     {
-        // Reserved for post-response cleanup tasks.
+        $container = $request->getAttribute(ContainerInterface::class)
+            ?? $this->requestContainers[$request]
+            ?? null;
+
+        if ($container instanceof \EmbegeQ\Nutrisi\Container\RequestContainer) {
+            unset($this->requestContainers[$request]);
+        }
+
+        gc_collect_cycles();
     }
 }
