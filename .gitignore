@@ -10,3 +10,4 @@ phpunit.xml
 *.swo
 .DS_Store
 Thumbs.db
+/build/
