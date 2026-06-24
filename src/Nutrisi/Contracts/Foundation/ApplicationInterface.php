@@ -72,6 +72,24 @@ interface ApplicationInterface extends ContainerInterface
     public function boot(): void;
 
     /**
+     * Get the path to the bootstrap directory.
+     *
+     * @param  string  $path  An optional path segment to append.
+     * @return string
+     */
+    public function bootstrapPath(string $path = ''): string;
+
+    /**
+     * Register all configured service providers.
+     *
+     * This merges framework-level providers (DefaultProviders) with
+     * application-level providers (bootstrap/providers.php) and registers them all.
+     *
+     * @return void
+     */
+    public function registerConfiguredProviders(): void;
+
+    /**
      * Determine if the application has been booted.
      *
      * @return bool

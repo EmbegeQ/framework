@@ -169,4 +169,29 @@ class ApplicationTest extends TestCase
 
         $this->assertSame('testing', $app->environment());
     }
+
+    #[Test]
+    public function it_loads_dotenv_variables_on_construction(): void
+    {
+        $tempDir = __DIR__ . '/temp_test_env';
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir);
+        }
+
+        file_put_contents($tempDir . '/.env', "TEST_FOO=bar\n");
+
+        try {
+            new Application($tempDir);
+            $this->assertSame('bar', $_ENV['TEST_FOO'] ?? null);
+        } finally {
+            // Clean up
+            if (file_exists($tempDir . '/.env')) {
+                unlink($tempDir . '/.env');
+            }
+            if (is_dir($tempDir)) {
+                rmdir($tempDir);
+            }
+            unset($_ENV['TEST_FOO']);
+        }
+    }
 }

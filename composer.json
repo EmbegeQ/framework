@@ -40,7 +40,8 @@
         "psr/http-server-handler": "^1.0",
         "psr/http-server-middleware": "^1.0",
         "psr/log": "^3.0",
-        "psr/simple-cache": "^3.0"
+        "psr/simple-cache": "^3.0",
+        "vlucas/phpdotenv": "^5.6"
     },
     "require-dev": {
         "nikic/fast-route": "^2.0",
@@ -61,6 +62,7 @@
         "nikic/fast-route": "Required for the default routing implementation (^2.0).",
         "monolog/monolog": "Required for the default logging implementation (^3.0).",
         "league/flysystem": "Required for the filesystem abstraction layer (^3.25).",
+        "league/flysystem-aws-s3-v3": "Required to use the S3 compatible storage drivers (^3.0).",
         "symfony/console": "Required for the CLI application layer (^7.4 || ^8.0).",
         "symfony/mailer": "Required for the mail transport layer (^7.4 || ^8.0)."
     },

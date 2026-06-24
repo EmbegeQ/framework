@@ -95,7 +95,7 @@ class FilesystemManager
         $root = $config['root'] ?? null;
         if (!$root) {
             $basePath = $this->container->has('app') ? $this->container->get('app')->basePath() : sys_get_temp_dir();
-            $root = rtrim($basePath, '\/') . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'app';
+            $root = rtrim($basePath, '\/') . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'private';
         }
 
         $links = $config['links'] ?? LocalFilesystemAdapter::SKIP_LINKS;
@@ -104,6 +104,61 @@ class FilesystemManager
         $flysystem = new Flysystem($adapter, $config);
 
         return new FilesystemAdapter($flysystem);
+    }
+
+    /**
+     * Create an instance of the "s3" filesystem driver.
+     *
+     * @param array<string, mixed> $config
+     * @return FilesystemInterface
+     * @throws \RuntimeException
+     */
+    protected function createS3Driver(array $config): FilesystemInterface
+    {
+        if (!class_exists(\League\Flysystem\AwsS3V3\AwsS3V3Adapter::class)) {
+            throw new \RuntimeException('S3 driver requires league/flysystem-aws-s3-v3 package.');
+        }
+
+        if (!class_exists(\Aws\S3\S3Client::class)) {
+            throw new \RuntimeException('S3 driver requires aws/aws-sdk-php package.');
+        }
+
+        $s3Config = $this->formatS3Config($config);
+
+        /** @var \Aws\S3\S3Client $client */
+        $client = new \Aws\S3\S3Client($s3Config);
+
+        $adapter = new \League\Flysystem\AwsS3V3\AwsS3V3Adapter(
+            $client,
+            $config['bucket'],
+            $config['root'] ?? '',
+            $config['options'] ?? null
+        );
+
+        $flysystem = new Flysystem($adapter, $config);
+
+        return new FilesystemAdapter($flysystem);
+    }
+
+    /**
+     * Format the S3 configuration.
+     *
+     * @param array<string, mixed> $config
+     * @return array<string, mixed>
+     */
+    protected function formatS3Config(array $config): array
+    {
+        $config += ['version' => 'latest'];
+
+        if (!empty($config['key']) && !empty($config['secret'])) {
+            $config['credentials'] = [
+                'key' => $config['key'],
+                'secret' => $config['secret'],
+                'token' => $config['token'] ?? null,
+            ];
+        }
+
+        return array_diff_key($config, array_flip(['driver', 'bucket', 'root', 'options']));
     }
 
     /**

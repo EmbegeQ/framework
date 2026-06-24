@@ -11,6 +11,7 @@ use EmbegeQ\Nutrisi\Contracts\Config\RepositoryInterface;
 use EmbegeQ\Nutrisi\Contracts\Container\ContainerInterface;
 use EmbegeQ\Nutrisi\Contracts\Container\ServiceProviderInterface;
 use EmbegeQ\Nutrisi\Contracts\Foundation\ApplicationInterface;
+use EmbegeQ\Nutrisi\Support\DefaultProviders;
 
 /**
  * The EmbegeQ Application Kernel.
@@ -64,6 +65,7 @@ class Application extends ApplicationContainer implements ApplicationInterface
 
         $this->registerBaseBindings();
         $this->registerCoreContainerAliases();
+        $this->loadEnvironmentVariables();
     }
 
     /**
@@ -96,6 +98,21 @@ class Application extends ApplicationContainer implements ApplicationInterface
     }
 
     /**
+     * Load environment variables from the .env file.
+     *
+     * @return void
+     */
+    private function loadEnvironmentVariables(): void
+    {
+        $envPath = $this->basePath('.env');
+
+        if (file_exists($envPath)) {
+            $dotenv = \Dotenv\Dotenv::createImmutable($this->basePath());
+            $dotenv->safeLoad();
+        }
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function version(): string
@@ -117,6 +134,14 @@ class Application extends ApplicationContainer implements ApplicationInterface
     public function configPath(string $path = ''): string
     {
         return $this->basePath('config') . ($path !== '' ? DIRECTORY_SEPARATOR . $path : '');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function bootstrapPath(string $path = ''): string
+    {
+        return $this->basePath('bootstrap') . ($path !== '' ? DIRECTORY_SEPARATOR . $path : '');
     }
 
     /**
@@ -214,5 +239,27 @@ class Application extends ApplicationContainer implements ApplicationInterface
         $repository = new Repository($items);
 
         $this->instance(RepositoryInterface::class, $repository);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function registerConfiguredProviders(): void
+    {
+        // 1. Framework-level providers.
+        $defaults = new DefaultProviders();
+
+        // 2. Application-level providers from bootstrap/providers.php.
+        $providersPath = $this->bootstrapPath('providers.php');
+        $appProviders = file_exists($providersPath) ? require $providersPath : [];
+
+        // 3. Merge and register all.
+        $allProviders = array_merge($defaults->toArray(), $appProviders);
+
+        foreach ($allProviders as $providerClass) {
+            if (class_exists($providerClass)) {
+                $this->register(new $providerClass());
+            }
+        }
     }
 }
