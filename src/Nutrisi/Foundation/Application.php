@@ -246,6 +246,8 @@ class Application extends ApplicationContainer implements ApplicationInterface
      */
     public function registerConfiguredProviders(): void
     {
+        $this->loadConfiguration();
+
         // 1. Framework-level providers.
         $defaults = new DefaultProviders();
 

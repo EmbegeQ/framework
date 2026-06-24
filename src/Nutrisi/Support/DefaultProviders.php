@@ -31,6 +31,8 @@ class DefaultProviders
     public function __construct(?array $providers = null)
     {
         $this->providers = $providers ?? [
+            \EmbegeQ\Nutrisi\Config\ConfigServiceProvider::class,
+            \EmbegeQ\Nutrisi\Routing\RoutingServiceProvider::class,
             \EmbegeQ\Nutrisi\Cache\CacheServiceProvider::class,
             \EmbegeQ\Nutrisi\Database\DatabaseServiceProvider::class,
             \EmbegeQ\Nutrisi\Events\EventServiceProvider::class,
