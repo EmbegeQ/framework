@@ -374,6 +374,22 @@ class Router implements RouterInterface
             );
         }
 
-        throw new \RuntimeException('Route action must return a string, array, or Psr\Http\Message\ResponseInterface.');
+        if ($response instanceof \EmbegeQ\Nutrisi\Contracts\Support\Renderable) {
+            return new Response(
+                200,
+                ['Content-Type' => 'text/html'],
+                $response->render()
+            );
+        }
+
+        if ($response instanceof \EmbegeQ\Nutrisi\Contracts\Support\Htmlable) {
+            return new Response(
+                200,
+                ['Content-Type' => 'text/html'],
+                $response->toHtml()
+            );
+        }
+
+        throw new \RuntimeException('Route action must return a string, array, Renderable, Htmlable, or Psr\Http\Message\ResponseInterface.');
     }
 }

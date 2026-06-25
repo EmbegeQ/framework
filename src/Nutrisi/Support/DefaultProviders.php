@@ -42,6 +42,7 @@ class DefaultProviders
             \EmbegeQ\Nutrisi\Queue\QueueServiceProvider::class,
             \EmbegeQ\Nutrisi\Session\SessionServiceProvider::class,
             \EmbegeQ\Nutrisi\Validation\ValidationServiceProvider::class,
+            \EmbegeQ\Nutrisi\View\ViewServiceProvider::class,
         ];
     }
 
